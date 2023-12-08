@@ -7,6 +7,7 @@ function app() {
     const modal = new bootstrap.Modal('#modal', {})
 
     obtenerCategorias()
+    
 
     function obtenerCategorias() {
         const url = `https://www.themealdb.com/api/json/v1/1/categories.php`
@@ -94,22 +95,90 @@ function app() {
     }
 
     function mostrarRecetaId(receta) {
-        const { idMeal, strInstructions, strMeal, strMealThumb} = receta
+        const { idMeal, strInstructions, strMeal, strMealThumb } = receta
         //Añadimos el contenido al modal
-        const modalTitle = document.querySelector('.modal .modal-title')
-        const modalBody = document.querySelector('.modal .modal-body')
+        const modalTitle = document.querySelector('.modal .modal-title');
+        const modalBody = document.querySelector('.modal .modal-body');
 
         modalTitle.textContent = strMeal
         modalBody.innerHTML = `
-        <img class="img-fluid" src="${strMealThumb} alt="receta ${strMeal}" />
-        <h3 class="my-3">Instructions</h3>
+        <img class="img-fluid" src="${strMealThumb}" alt="receta ${strMeal}" />
+        <h3 class="my-3">Instrucciones</h3>
         <p>${strInstructions}</p>
+        <h3 class="my-3">Ingredientes y Cantidades</h3>
         `
+
+        const listGroup = document.createElement('UL')
+        listGroup.classList.add('list-group')
+        // Mostrar cantidades e ingredientes
+        for(let i = 1; i <= 20; i++ ) {
+            if(receta[`strIngredient${i}`]) {
+                const ingrediente = receta[`strIngredient${i}`]
+                const cantidad = receta[`strMeasure${i}`]
+
+                const ingredienteLi = document.createElement('LI')
+                ingredienteLi.classList.add('list-group-item')
+                ingredienteLi.textContent = `${ingrediente} - ${cantidad}`
+
+                listGroup.appendChild(ingredienteLi)
+            }
+        }
+
+        modalBody.appendChild(listGroup)
+
+        const modalFooter = document.querySelector('.modal-footer')
+        clearHtml(modalFooter)
+
+        const btnFavorito = document.createElement('button')
+        btnFavorito.classList.add('btn', 'btn-danger', 'col')
+        btnFavorito.textContent = existeEnStorage(idMeal) ? 'Eliminar Favorito' : 'Agregar Favorito'
+        //Localstorage
+        btnFavorito.onclick = function() {
+
+            if(existeEnStorage(idMeal)){
+                eliminarFavorito(idMeal)
+                btnFavorito.textContent = 'Guardar Favorito'
+                return
+            }
+             
+            agregarFav({
+                id: idMeal,
+                title: strMeal,
+                img: strMealThumb
+            })
+            btnFavorito.textContent = 'Eliminar Favorito'
+
+        }
+        
+        const btnCerrar = document.createElement('button')
+        btnCerrar.classList.add('btn', 'btn-secondary', 'col')
+        btnCerrar.textContent = 'Cerrar'
+        btnCerrar.onclick = function() {
+            modal.hide()
+        }
+
+        modalFooter.appendChild(btnFavorito)
+        modalFooter.appendChild(btnCerrar)
 
         modal.show()
     }
 
 
+    function agregarFav(receta){
+        const favs = JSON.parse(localStorage.getItem('favoritos')) ?? []
+        localStorage.setItem('favoritos', JSON.stringify([...favs, receta]))
+    }
+
+    function eliminarFavorito(id){
+        const favs = JSON.parse(localStorage.getItem('favoritos')) ?? []
+        const nuevosFavs = favs.filter(favorito => favorito.id !== id)
+        localStorage.setItem('favoritos', JSON.stringify(nuevosFavs))
+    }
+
+    function existeEnStorage(id){
+        const favs = JSON.parse(localStorage.getItem('favoritos')) ?? []
+        return favs.some(favorito => favorito.id === id)
+    }
 
     function clearHtml(select) {
         while(select.firstChild){
