@@ -1,12 +1,20 @@
 function app() {
 
-    const selectCaregorias = document.querySelector('#categorias')
-    selectCaregorias.addEventListener('change', categoriaSeleccionada)
-
     const resultado = document.querySelector('#resultado')
+    const selectCaregorias = document.querySelector('#categorias')
+    if(selectCaregorias){
+        selectCaregorias.addEventListener('change', categoriaSeleccionada) 
+        obtenerCategorias()
+
+    }
+
+    const favsDiv = document.querySelector('.favoritos')
+    if(favsDiv){
+        obtenerFavs()
+    }
+
     const modal = new bootstrap.Modal('#modal', {})
 
-    obtenerCategorias()
     
 
     function obtenerCategorias() {
@@ -56,15 +64,15 @@ function app() {
             //Importante que tenga su clase de bootstrap, alt, y src
             const recetaImg = document.createElement('IMG')
             recetaImg.classList.add('card-img-top')
-            recetaImg.alt = `Imagen de la receta ${strMeal}`
-            recetaImg.src = strMealThumb
+            recetaImg.alt = `Imagen de la receta ${strMeal ?? receta.title}`
+            recetaImg.src = strMealThumb ?? receta.img
 
             const recetaCardBody = document.createElement('DIV')
             recetaCardBody.classList.add('card-body')
 
             const recetaHeading = document.createElement('H3')
             recetaHeading.classList.add('card-title', 'mb-3')
-            recetaHeading.textContent = strMeal
+            recetaHeading.textContent = strMeal ?? receta.title
 
             const recetaButton = document.createElement('button')
             recetaButton.classList.add('btn', 'btn-danger', 'w-100')
@@ -72,7 +80,7 @@ function app() {
             recetaButton.dataset.bsTarget = '#modal'
             recetaButton.dataset.bsToggle = 'modal'
             recetaButton.onclick = function(){
-                seleccionarReceta(idMeal)
+                seleccionarReceta(idMeal ?? receta.id)
             }
 
             recetaCardBody.appendChild(recetaHeading)
@@ -132,12 +140,15 @@ function app() {
         const btnFavorito = document.createElement('button')
         btnFavorito.classList.add('btn', 'btn-danger', 'col')
         btnFavorito.textContent = existeEnStorage(idMeal) ? 'Eliminar Favorito' : 'Agregar Favorito'
+
         //Localstorage
         btnFavorito.onclick = function() {
 
             if(existeEnStorage(idMeal)){
                 eliminarFavorito(idMeal)
                 btnFavorito.textContent = 'Guardar Favorito'
+                toast
+                notificationToast('Eliminado correctamente')
                 return
             }
              
@@ -147,6 +158,8 @@ function app() {
                 img: strMealThumb
             })
             btnFavorito.textContent = 'Eliminar Favorito'
+            notificationToast('Agregado correctamente')
+
 
         }
         
@@ -180,13 +193,31 @@ function app() {
         return favs.some(favorito => favorito.id === id)
     }
 
+    function notificationToast(msj){
+        const toastDiv = document.querySelector('#toast')
+        const toastBody = document.querySelector('.toast-body')
+        const toast = new bootstrap.Toast(toastDiv)
+        toastBody.textContent = msj
+        toast.show()
+    }
+    
+    function obtenerFavs() {
+        const favoritos = JSON.parse(localStorage.getItem('favoritos')) ?? []
+        if(favoritos.length){
+            mostrarRecetas(favoritos)
+            return
+        }
+        const noFavs = document.createElement('p')
+        noFavs.textContent = 'No tienes favoritos'
+        noFavs.classList.add('fs-4', 'text-center', 'font-bold', 'mt-5')
+        resultado.appendChild(noFavs)
+    }
+
     function clearHtml(select) {
         while(select.firstChild){
             select.removeChild(select.firstChild)
         }
     }
-
-
 
 
 
